@@ -23,11 +23,14 @@ import javax.swing.GroupLayout.Alignment
 
 class HelloApplication : Application(), NativeKeyListener {
 
-    private var logFileName = "key_log.txt"
+    private var logFileName = ""
+    private lateinit var userName: String
     private lateinit var textArea: TextArea
     private lateinit var toggleButton: ToggleButton
     private lateinit var fileChooserButton: Button
     private lateinit var userInput: TextField;
+
+
 
     override fun start(primaryStage: Stage) {
         textArea = TextArea()
@@ -35,7 +38,8 @@ class HelloApplication : Application(), NativeKeyListener {
 
 
 
-        userInput = TextField("имя пользователя")
+        userInput = TextField()
+        userInput.promptText = "имя пользователя"
 
         toggleButton = ToggleButton("Включить отслеживание клавиш")
 
@@ -52,30 +56,45 @@ class HelloApplication : Application(), NativeKeyListener {
             }
         }
 
-        userInput.focusedProperty().addListener { _, _, isFocused ->
-            if (isFocused) {
-                userInput.clear()
-            }
-        }
-
-
-
         val headerPanel = VBox(10.0)
-        headerPanel.children.addAll(toggleButton, userInput,fileChooserButton )
+        headerPanel.children.addAll(fileChooserButton, userInput, toggleButton)
 
 
 
         // Обработчик для переключателя
         toggleButton.setOnAction {
+
             if (toggleButton.isSelected) {
+
+                if(logFileName.isEmpty()){
+                    textArea.appendText("Выберите файл для записи данных аудита\n")
+                    toggleButton.isSelected = false
+                    return@setOnAction
+                }
+
+                if(userInput.text.isEmpty()){
+                    textArea.appendText("введите имя пользователя\n")
+                    toggleButton.isSelected = false
+                    return@setOnAction
+                }
+
+                textArea.isDisable = true
+                userInput.isDisable = true;
+                fileChooserButton.isDisable = true;
+
                 textArea.appendText("Режим отслеживания клавиш включен.\n")
+                textArea.appendText("Файл для записи: $logFileName\tИмя пользователя: ${userInput.text}\n")
                 toggleButton.text = "Отключить отслеживание"
                 // глобальный перехват клавиш
                 registerNativeHook()
                 addNativeKeyListener(this)
             } else {
                 textArea.appendText("Режим отслеживания клавиш выключен.\n")
+                textArea.isDisable = false
+                userInput.isDisable = false;
+                fileChooserButton.isDisable = false;
                 toggleButton.text = "Включить отслеживание"
+                textArea.appendText("Данные сохранены в файл: $logFileName")
                 // Отключить глобальный перехват клавиш
                 GlobalScreen.unregisterNativeHook()
             }
@@ -114,7 +133,7 @@ class HelloApplication : Application(), NativeKeyListener {
                 writer.write(message)
             }
         } catch (e: IOException) {
-            e.printStackTrace() // В случае ошибки выводим стек трейс
+            e.printStackTrace()
         }
     }
 
